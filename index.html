@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>German Gap Game – 20 Questions</title>
+<style>
+:root{
+  --bg:#f6f5f1;--card:#ffffff;--ink:#1f2328;--muted:#6b7280;--line:#e3e1da;
+  --accent:#2f6fed;--accent-ink:#ffffff;--soft:#eef3ff;
+  --ok:#1a7f4b;--okbg:#e5f5ec;--bad:#b3261e;--badbg:#fdeceb;--warn:#8a5a00;--warnbg:#fff4de;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#16181c;--card:#1f2227;--ink:#eceae4;--muted:#9aa0a8;--line:#33373d;
+    --accent:#6b9bff;--accent-ink:#0d1117;--soft:#202a3d;
+    --ok:#5ad08f;--okbg:#14301f;--bad:#ff8a80;--badbg:#3a1a18;--warn:#f0c26b;--warnbg:#34290f}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:680px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:26px;margin:0;font-weight:800;letter-spacing:-.02em}
+h2{margin:0 0 4px;font-size:22px}
+.sub{color:var(--muted);font-size:14px;margin-top:2px}
+.hidden{display:none !important}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:12px 18px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.4;cursor:default}
+.btn.small{padding:8px 12px;font-size:14px}
+.btn.speak{padding:12px 14px}
+
+/* menu */
+.menu-head{margin:8px 0 18px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mode{display:flex;flex-direction:column;gap:2px;text-align:left;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:14px;padding:14px;cursor:pointer;font-family:inherit;min-height:92px}
+.mode:hover{border-color:var(--accent)}
+.mode .num{font-size:22px;font-weight:800;color:var(--accent)}
+.mode .nm{font-size:14px;font-weight:600}
+.mode .bs{font-size:12px;color:var(--muted);margin-top:auto}
+.mode.wide{grid-column:1 / -1;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);min-height:84px}
+.mode.wide .num,.mode.wide .bs{color:var(--accent-ink);opacity:.9}
+.rules{margin-top:18px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14px}
+.rules b{display:block;margin-bottom:6px;font-size:15px}
+.rules ul{margin:0;padding-left:18px}
+.rules li{margin:3px 0}
+
+/* game */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.stats{display:flex;gap:8px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 12px;text-align:center;min-width:64px}
+.stat b{display:block;font-size:18px;line-height:1.2;font-variant-numeric:tabular-nums}
+.stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 20px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.meta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px}
+.bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:22px}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .25s}
+.sentence{font-size:24px;line-height:1.9;margin:0 0 6px;word-wrap:break-word}
+.sentence input{font:inherit;font-weight:600;color:var(--accent);background:var(--soft);border:none;border-bottom:3px solid var(--accent);border-radius:8px 8px 0 0;padding:0 8px;margin:0 3px;text-align:center;outline:none;max-width:100%}
+.sentence input:focus{background:var(--card);box-shadow:0 0 0 2px var(--accent)}
+.sentence input.ok{color:var(--ok);background:var(--okbg);border-color:var(--ok);box-shadow:none}
+.sentence input.shown{color:var(--warn);background:var(--warnbg);border-color:var(--warn);box-shadow:none}
+.sentence input.bad{border-color:var(--bad);background:var(--badbg);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.en{color:var(--muted);font-size:16px;margin:0 0 12px}
+.worth{font-size:14px;font-weight:700;color:var(--accent);margin-bottom:6px}
+.hint{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:18px;letter-spacing:.2em;color:var(--warn);min-height:26px;margin-bottom:6px}
+.umlauts{display:flex;gap:6px;margin-bottom:16px}
+.umlauts button{width:42px;height:38px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;font-size:17px;cursor:pointer;font-family:inherit}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.feedback{margin-top:14px;padding:10px 14px;border-radius:10px;font-size:15px;display:none}
+.feedback.show{display:block}
+.feedback.ok{background:var(--okbg);color:var(--ok)}
+.feedback.bad{background:var(--badbg);color:var(--bad)}
+.feedback.info{background:var(--warnbg);color:var(--warn)}
+.feedback.note{background:var(--soft);color:var(--ink)}
+
+/* result */
+.big{font-size:52px;font-weight:800;margin:6px 0 0;letter-spacing:-.02em}
+.grade{font-size:20px;font-weight:700;margin:2px 0 10px}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 4px}
+.facts div{background:var(--soft);border-radius:10px;padding:8px;text-align:center}
+.facts b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.facts span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.record{color:var(--ok);font-weight:700;margin:8px 0 0}
+.miss{margin:14px 0 18px;padding:0;list-style:none;border-top:1px solid var(--line)}
+.miss li{padding:10px 0;border-bottom:1px solid var(--line);font-size:16px}
+.miss small{display:block;color:var(--muted);font-size:14px}
+.tip{color:var(--muted);font-size:13px;margin-top:16px}
+@media (max-width:480px){.sentence{font-size:21px}.stat{min-width:56px;padding:5px 8px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- MENU -->
+  <section id="menu">
+    <div class="menu-head">
+      <h1>German Gap Game</h1>
+      <div class="sub">Duolingo German · Section 1 · 20 questions per round</div>
+    </div>
+    <div class="grid" id="modeGrid"></div>
+    <div class="rules">
+      <b>How points work</b>
+      <ul>
+        <li>Correct with no help: <b>10 points</b></li>
+        <li>Each hint (one more letter): <b>−2</b> (8 → 6 → 4 → 2)</li>
+        <li>Each wrong try: <b>−1</b></li>
+        <li>Speed bonus (no hints, no mistakes): <b>+3</b> under 5 s, <b>+2</b> under 10 s, <b>+1</b> under 20 s</li>
+        <li>Reveal answer: <b>0</b> (and it comes back in your review list)</li>
+        <li>Best possible round: <b>260</b></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="hidden">
+    <div class="topbar">
+      <button class="btn small" id="menuBtn">← Menu</button>
+      <div class="stats">
+        <div class="stat"><b id="points">0</b><span>Points</span></div>
+        <div class="stat"><b id="clock">0:00</b><span>Time</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="meta"><span id="modeLabel"></span><span id="pos"></span></div>
+      <div class="bar"><i id="barFill"></i></div>
+      <p class="sentence" id="sentence"></p>
+      <p class="en" id="en"></p>
+      <div class="worth" id="worth"></div>
+      <div class="hint" id="hint" aria-live="polite"></div>
+      <div class="umlauts" id="umlauts"></div>
+      <div class="actions">
+        <button class="btn primary" id="checkBtn">Check</button>
+        <button class="btn" id="hintBtn">Hint (−2)</button>
+        <button class="btn" id="revealBtn">Reveal answer</button>
+        <button class="btn speak hidden" id="speakBtn" title="Hear the sentence" aria-label="Hear the sentence">🔊</button>
+        <button class="btn primary hidden" id="nextBtn">Next →</button>
+      </div>
+      <div class="feedback" id="feedback" aria-live="polite"></div>
+      <div class="tip">Enter = check / next. Typing “Kase” instead of “Käse” still counts, with no penalty.</div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="card hidden">
+    <h2 id="modeResult"></h2>
+    <div class="big" id="finalScore"></div>
+    <div class="grade" id="grade"></div>
+    <div class="record hidden" id="record">🏆 New personal best!</div>
+    <div class="facts">
+      <div><b id="fClean"></b><span>No help</span></div>
+      <div><b id="fTime"></b><span>Total time</span></div>
+      <div><b id="fAvg"></b><span>Avg / question</span></div>
+    </div>
+    <div class="sub" id="missTitle" style="margin-top:16px"></div>
+    <ul class="miss" id="missList"></ul>
+    <div class="actions">
+      <button class="btn primary" id="againBtn">Play again</button>
+      <button class="btn" id="toMenuBtn">Menu</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// [unit, sentence with ___, answer (alternatives separated by |), English]
+const Q = [
+// ---------- Unit 1: cafe & family ----------
+[1,"___, ich bin Anna.","Hallo","Hello, I am Anna."],
+[1,"Wasser, ___.","bitte","Water, please."],
+[1,"___, bis bald!","Tschüss","Bye, see you soon!"],
+[1,"Wasser, bitte. – ___!","Danke","Water, please. – Thank you!"],
+[1,"Bist du Max? – ___, ich bin Max.","Ja","Are you Max? – Yes, I am Max."],
+[1,"Bist du Anna? – ___, ich bin Max.","Nein","Are you Anna? – No, I am Max."],
+[1,"Er ist mein ___.","Vater","He is my father."],
+[1,"Das ist meine ___.","Mutter","That is my mother."],
+[1,"Sie ist meine ___.","Schwester","She is my sister."],
+[1,"Das ist mein ___.","Sohn","That is my son."],
+[1,"Das ist meine ___.","Tochter","That is my daughter."],
+[1,"Die ___ ist nett.","Frau","The woman is nice."],
+[1,"Kaffee ___ Tee?","oder","Coffee or tea?"],
+[1,"Brot ___ Milch.","und","Bread and milk."],
+[1,"Wein ___ Bier?","oder","Wine or beer?"],
+[1,"___ bin Max.","Ich","I am Max."],
+[1,"Ich ___ Max.","bin","I am Max."],
+[1,"___ bist nett.","Du","You are nice."],
+[1,"Eins, zwei, drei, ___.","vier","One, two, three, four."],
+[1,"___, zwei, drei, vier.","Eins","One, two, three, four."],
+[1,"Der ___ ist heiß.","Tee","The tea is hot."],
+[1,"Der ___ ist heiß.","Kaffee","The coffee is hot."],
+[1,"Das ___ ist kalt.","Bier","The beer is cold."],
+[1,"Der ___ ist gut.","Wein","The wine is good."],
+[1,"Die ___ ist kalt.","Milch","The milk is cold."],
+[1,"Das ___ ist gut.","Brot","The bread is good."],
+[1,"___, das ist gut!","Ach","Oh, that is good!"],
+[1,"Mein ___ ist nett.","Vater","My father is nice."],
+[1,"Meine ___ ist klug.","Mutter","My mother is smart."],
+
+// ---------- Unit 2: adjectives & greetings ----------
+[2,"Es ist ___ gut.","sehr","It is very good."],
+[2,"Der Elefant ist ___.","groß","The elephant is big."],
+[2,"Die Katze ist ___.","klug","The cat is smart."],
+[2,"Der Junge ist ___.","jung","The boy is young."],
+[2,"Die Frau ist ___.","schön","The woman is beautiful."],
+[2,"Du bist ___.","nett","You are nice."],
+[2,"Der Hund ist ___!","super","The dog is awesome!"],
+[2,"Der ___ ist groß.","Bär","The bear is big."],
+[2,"Die ___ ist klug.","Eule","The owl is smart."],
+[2,"Die ___ ist nett.","Katze","The cat is nice."],
+[2,"Der ___ ist jung.","Hund","The dog is young."],
+[2,"Der ___ ist sehr groß.","Elefant","The elephant is very big."],
+[2,"Die ___ ist sehr jung.","Maus","The mouse is very young."],
+[2,"Der ___ ist nett.","Junge","The boy is nice."],
+[2,"Guten ___!","Tag","Good day!"],
+[2,"___ geht's?","Wie","How are you?"],
+[2,"Wie geht's? – ___, danke.","Gut","How are you? – Good, thanks."],
+[2,"Wie geht's? – Es ___.","geht","How are you? – I'm alright."],
+[2,"Auf ___!","Wiedersehen","Goodbye!"],
+[2,"Wein und Bier – ___!","Prost","Wine and beer – cheers!"],
+[2,"Bis ___!","bald","See you soon!"],
+[2,"Bis ___!","später","See you later!"],
+[2,"Kommst du? – ___!","Natürlich","Are you coming? – Of course!"],
+[2,"Es tut mir ___.","leid","I am sorry."],
+[2,"___ ist der Hund?","Wo","Where is the dog?"],
+[2,"Es ___ gut.","ist","It is good."],
+[2,"Die Eule ist ___.","schön","The owl is beautiful."],
+[2,"Die Maus ist ___ nett.","sehr","The mouse is very nice."],
+
+// ---------- Unit 3: restaurant ----------
+[3,"Der ___ ist lecker.","Käse","The cheese is delicious."],
+[3,"Der ___ ist kalt.","Salat","The salad is cold."],
+[3,"Die ___ ist heiß.","Pizza","The pizza is hot."],
+[3,"Das ___ ist lecker.","Sandwich","The sandwich is delicious."],
+[3,"Das ___ ist gut.","Ei","The egg is good."],
+[3,"Die ___ ist lecker.","Wurst","The sausage is delicious."],
+[3,"Das ___ ist lecker.","Schnitzel","The schnitzel is delicious."],
+[3,"Das ___ ist wunderbar.","Essen","The food is wonderful."],
+[3,"Die ___, bitte.","Rechnung","The check, please."],
+[3,"Die ___, bitte.","Speisekarte","The menu, please."],
+[3,"Der ___ ist nett.","Kellner","The waiter is nice."],
+[3,"___! Die Rechnung, bitte.","Entschuldigung","Excuse me! The check, please."],
+[3,"Das ___ ist gut.","Restaurant","The restaurant is good."],
+[3,"Das ___ ist kalt.","Mineralwasser","The mineral water is cold."],
+[3,"Das Wasser ist ___.","kalt","The water is cold."],
+[3,"Der Kaffee ist ___.","heiß","The coffee is hot."],
+[3,"Die Pizza ist ___.","lecker","The pizza is delicious."],
+[3,"Brot ___ Käse.","mit","Bread with cheese."],
+[3,"Ich bin ___.","hier","I am here."],
+[3,"___ ist das Salz.","Hier","Here is the salt."],
+[3,"Das ___ ist hier.","Salz","The salt is here."],
+[3,"Was ist das? – ___ ist Salz.","Das","What is that? – That is salt."],
+[3,"Der Kaffee ist ___ heiß.","zu","The coffee is too hot."],
+[3,"Das Schnitzel ist ___!","wunderbar","The schnitzel is wonderful!"],
+[3,"Das Schnitzel ist ___ lecker.","sehr","The schnitzel is very delicious."],
+
+// ---------- Unit 4: where you're from & work ----------
+[4,"Ich komme aus ___.","Kanada","I come from Canada."],
+[4,"Er kommt aus ___.","Deutschland","He comes from Germany."],
+[4,"Sie kommt aus ___.","Frankreich","She comes from France."],
+[4,"Ich komme aus ___.","Österreich","I come from Austria."],
+[4,"Ich komme ___ Wien.","aus","I come from Vienna."],
+[4,"Du kommst ___ Amerika.","aus","You come from America."],
+[4,"Ich komme aus ___.","München","I come from Munich."],
+[4,"Woher ___ du?","kommst","Where are you from?"],
+[4,"___ kommst du?","Woher","Where are you from?"],
+[4,"Ich ___ aus München.","komme","I come from Munich."],
+[4,"Du ___ aus Kanada.","kommst","You come from Canada."],
+[4,"Wien ist eine ___.","Stadt","Vienna is a city."],
+[4,"München ist ___ groß.","auch","Munich is also big."],
+[4,"Wien ist ___.","teuer","Vienna is expensive."],
+[4,"Das Café ist ___.","cool","The café is cool."],
+[4,"Das Restaurant ist ___.","laut","The restaurant is loud."],
+[4,"Die Stadt ist ___.","aufregend","The city is exciting."],
+[4,"Sie ist ___.","Schauspielerin","She is an actress."],
+[4,"Er ist ___.","Schauspieler","He is an actor."],
+[4,"Er ist ___.","Arzt","He is a doctor."],
+[4,"Sie ist ___.","Ärztin","She is a doctor."],
+[4,"Ich bin ___.","Student|Studentin","I am a college student."],
+[4,"Sie ist ___.","Professorin","She is a professor."],
+[4,"Er ist ___.","Professor","He is a professor."],
+[4,"Das ist meine ___.","Freundin","That is my girlfriend / friend."],
+[4,"___ ist das?","Was","What is that?"],
+[4,"Das ist ___ Hund.","dein","That is your dog."],
+[4,"Das ist ___ Katze.","deine","That is your cat."],
+[4,"Die ___ ist stressig.","Arbeit","The job is stressful."],
+[4,"Die Arbeit ist ___.","stressig","The job is stressful."],
+[4,"Die Arbeit ist ___.","interessant","The job is interesting."],
+[4,"Die Arbeit ist stressig, ___ interessant.","aber","The job is stressful, but interesting."],
+[4,"Der Junge ist ___.","acht","The boy is eight."],
+[4,"Sie ist ___ aus Kanada.","auch","She is also from Canada."],
+
+// ---------- Unit 5: present tense ----------
+[5,"Ich ___ oft.","koche","I often cook."],
+[5,"Du ___ gut.","kochst","You cook well."],
+[5,"Er ___ sehr gut.","kocht","He cooks very well."],
+[5,"Ich ___ manchmal.","schwimme","I sometimes swim."],
+[5,"Du ___ immer.","schwimmst","You always swim."],
+[5,"Die Maus ___.","schwimmt","The mouse swims."],
+[5,"Ich ___ nie.","male","I never paint."],
+[5,"Du ___ oft.","malst","You often paint."],
+[5,"Sie ___ gut.","malt","She paints well."],
+[5,"Ich spiele ___.","Schach","I play chess."],
+[5,"Du ___ Klavier.","spielst","You play the piano."],
+[5,"Er ___ Schach.","spielt","He plays chess."],
+[5,"Ich koche ___.","manchmal","I cook sometimes."],
+[5,"Er schwimmt ___.","immer","He always swims."],
+[5,"Sie spielt ___ Klavier.","oft","She often plays the piano."],
+[5,"Ich spiele ___ Schach.","nie","I never play chess."],
+[5,"Ich ___ Klavier.","spiele","I play the piano."],
+
+[5,"Du ___ Schach.","spielst","You play chess."],
+[5,"Ich ___ gut.","schwimme","I swim well."],
+[5,"Er ___ oft.","malt","He often paints."],
+[5,"Sie ___ immer Klavier.","spielt","She always plays the piano."],
+[5,"Der Hund ___ nie.","schwimmt","The dog never swims."],
+[5,"Sie ___ manchmal.","kocht","She sometimes cooks."],
+[5,"Ich male ___.","oft","I often paint."],
+[5,"Du kochst ___ gut.","sehr","You cook very well."],
+
+// ---------- Unit 6: directions ----------
+[6,"Wo ist der ___?","Bahnhof","Where is the train station?"],
+[6,"Wo ist die ___?","Apotheke","Where is the pharmacy?"],
+[6,"Wo ist die ___?","Bibliothek","Where is the library?"],
+[6,"Wo ist die ___?","Kirche","Where is the church?"],
+[6,"Wo ist der ___?","Park","Where is the park?"],
+[6,"Wo ist der ___?","Markt","Where is the market?"],
+[6,"Wo ist das ___?","Museum","Where is the museum?"],
+[6,"Wo ist das ___?","Kino","Where is the movie theater?"],
+[6,"Wo ist das ___?","Hotel","Where is the hotel?"],
+[6,"Wo ist der ___?","Supermarkt","Where is the supermarket?"],
+[6,"Wo ist die ___?","Bäckerei","Where is the bakery?"],
+[6,"Wo ist die ___?","Universität","Where is the university?"],
+[6,"Wo ist der ___?","Geldautomat","Where is the ATM?"],
+[6,"Wo ist die ___?","U-Bahnstation|U-Bahn-Station","Where is the subway station?"],
+[6,"Wo ist der ___?","Taxistand","Where is the taxi stand?"],
+[6,"Wo ist ___ Museum?","das","Where is the museum?"],
+[6,"Wo ist ___ Apotheke?","die","Where is the pharmacy?"],
+[6,"Wo ist ___ Supermarkt?","der","Where is the supermarket?"],
+[6,"Das Café ist ___.","links","The café is on the left."],
+[6,"Das Hotel ist ___.","rechts","The hotel is on the right."],
+[6,"Links oder ___?","rechts","Left or right?"],
+[6,"Die Bäckerei ist ___.","drüben","The bakery is over there."],
+[6,"Die Apotheke ist in der ___.","Nähe","The pharmacy is nearby."],
+[6,"Die Universität ist in der ___.","Nähe","The university is nearby."],
+[6,"Der Bahnhof ist ___.","weit weg","The train station is far away."],
+[6,"Die Kirche ist ___.","alt","The church is old."],
+[6,"Das Hotel ist ___.","neu","The hotel is new."],
+[6,"Das Café ist ___.","billig","The café is cheap."],
+[6,"Das Hotel ist ___.","elegant","The hotel is elegant."],
+[6,"Das Museum ist ___.","alt","The museum is old."]
+];
+
+const UNIT_NAMES = {1:"Cafe & family",2:"Adjectives & greetings",3:"Restaurant",4:"Where you're from & work",5:"Present tense",6:"Directions"};
+const N = 20;            // questions per round
+const MAX_PER_Q = 13;    // 10 + speed bonus 3
+
+// ---------- helpers ----------
+const $ = id => document.getElementById(id);
+const stripArt = s => { const m = s.match(/^(der|die|das|ein|eine|einen)\s+(.+)$/); return m ? m[2] : s; };
+const clean = s => stripArt(s.toLowerCase().trim().replace(/\s+/g," "));
+const loose = s => clean(s).replace(/ß/g,"ss").replace(/[\s\-.,!?'’]/g,"").normalize("NFD").replace(/[̀-ͯ]/g,"");
+const tight = s => clean(s).replace(/[\s\-.,!?'’]/g,"");
+const answers = q => q[2].split("|");
+
+function judge(input, q){
+  const u = input.toLowerCase().trim();
+  const variants = [u, u.replace(/ae/g,"ä").replace(/oe/g,"ö").replace(/ue/g,"ü")];
+  let result = "no";
+  for (const a of answers(q)){
+    for (const v of variants){
+      if (tight(v) === tight(a)) return "exact";
+      if (loose(v) === loose(a)) result = "loose";
+    }
+  }
+  return result;
+}
+function shuffle(a){ a = a.slice(); for (let k=a.length-1;k>0;k--){ const j=Math.floor(Math.random()*(k+1)); [a[k],a[j]]=[a[j],a[k]]; } return a; }
+const fmt = s => { s = Math.floor(s); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); };
+const bonusFor = t => t <= 5 ? 3 : t <= 10 ? 2 : t <= 20 ? 1 : 0;
+const basePts = (h,w) => Math.max(1, 10 - 2*h - w);
+
+// best scores (light per-device convenience; fails silently if storage is blocked)
+const bestKey = m => "gapgame-best-" + m;
+function getBest(m){ try{ return parseInt(localStorage.getItem(bestKey(m)) || "0", 10) || 0; }catch(e){ return 0; } }
+function setBest(m, v){ try{ localStorage.setItem(bestKey(m), String(v)); }catch(e){} }
+
+// ---------- state ----------
+let mode = null, pool = [], i = 0, total = 0, history = [];
+let gameStart = 0, qStart = 0, ticker = null;
+let hints = 0, wrong = 0, answered = false;
+
+function show(name){
+  ["menu","game","result"].forEach(id => $(id).classList.toggle("hidden", id !== name));
+  window.scrollTo(0,0);
+}
+
+// ---------- menu ----------
+function buildMenu(){
+  const g = $("modeGrid"); g.textContent = "";
+  const add = (m, num, name, wide) => {
+    const b = document.createElement("button");
+    b.className = "mode" + (wide ? " wide" : "");
+    const n = document.createElement("span"); n.className = "num"; n.textContent = num;
+    const t = document.createElement("span"); t.className = "nm"; t.textContent = name;
+    const s = document.createElement("span"); s.className = "bs";
+    const best = getBest(m); s.textContent = best ? "Best: " + best + " / " + (N*MAX_PER_Q) : "Not played yet";
+    b.append(n, t, s);
+    b.onclick = () => startGame(m);
+    g.appendChild(b);
+  };
+  add("all", "🎲 Random sentences", "20 random sentences from Units 1–6, all mixed", true);
+  for (let u=1; u<=6; u++) add(u, "Unit " + u, UNIT_NAMES[u], false);
+}
+
+function buildUmlauts(){
+  const box = $("umlauts");
+  ["ä","ö","ü","ß"].forEach(ch => {
+    const b = document.createElement("button");
+    b.textContent = ch; b.type = "button"; b.setAttribute("aria-label","Insert "+ch);
+    b.onmousedown = e => e.preventDefault();
+    b.onclick = () => {
+      const inp = $("ans"); if (!inp || inp.readOnly) return;
+      const s = inp.selectionStart ?? inp.value.length, e2 = inp.selectionEnd ?? s;
+      inp.value = inp.value.slice(0,s) + ch + inp.value.slice(e2);
+      inp.focus(); inp.setSelectionRange(s+1, s+1);
+    };
+    box.appendChild(b);
+  });
+}
+
+// ---------- game ----------
+function modeName(m){ return m === "all" ? "Random sentences" : "Unit " + m + " · " + UNIT_NAMES[m]; }
+
+function startGame(m){
+  mode = m;
+  const base = m === "all" ? Q : Q.filter(q => q[0] === m);
+  pool = shuffle(base).slice(0, N);
+  i = 0; total = 0; history = [];
+  gameStart = Date.now();
+  $("points").textContent = "0";
+  $("modeLabel").textContent = modeName(m);
+  clearInterval(ticker); ticker = setInterval(tick, 250); tick();
+  show("game");
+  render();
+}
+
+function tick(){
+  $("clock").textContent = fmt((Date.now() - gameStart) / 1000);
+  if (!answered) updateWorth();
+}
+
+function updateWorth(){
+  const sec = (Date.now() - qStart) / 1000;
+  const bonus = (hints === 0 && wrong === 0) ? bonusFor(sec) : 0;
+  $("worth").textContent = "Worth now: " + basePts(hints, wrong) + (bonus ? " + " + bonus + " speed" : "") + " pts";
+}
+
+function setFeedback(kind, text){
+  const f = $("feedback");
+  f.className = "feedback show " + kind;
+  f.textContent = text;
+}
+function clearFeedback(){ $("feedback").className = "feedback"; $("feedback").textContent = ""; }
+
+function render(){
+  if (i >= pool.length) return showResult();
+  const q = pool[i];
+  answered = false; hints = 0; wrong = 0; qStart = Date.now();
+  $("pos").textContent = (i+1) + " / " + pool.length;
+  $("barFill").style.width = (i / pool.length * 100) + "%";
+  const parts = q[1].split("___");
+  const s = $("sentence"); s.textContent = "";
+  s.appendChild(document.createTextNode(parts[0]));
+  const inp = document.createElement("input");
+  inp.id = "ans"; inp.type = "text";
+  inp.setAttribute("autocomplete","off"); inp.setAttribute("autocapitalize","off");
+  inp.setAttribute("autocorrect","off"); inp.setAttribute("spellcheck","false");
+  inp.setAttribute("aria-label","Your answer");
+  const len = Math.max(...answers(q).map(a => a.length));
+  inp.style.width = Math.max(len, 5) + 2 + "ch";
+  inp.addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); answered ? next() : check(); } });
+  inp.addEventListener("input", () => inp.classList.remove("bad"));
+  s.appendChild(inp);
+  s.appendChild(document.createTextNode(parts[1] || ""));
+  $("en").textContent = q[3];
+  $("hint").textContent = "";
+  clearFeedback();
+  ["checkBtn","hintBtn","revealBtn"].forEach(id => { $(id).classList.remove("hidden"); $(id).disabled = false; });
+  $("nextBtn").classList.add("hidden");
+  $("nextBtn").textContent = (i === pool.length - 1) ? "Finish ✓" : "Next →";
+  $("speakBtn").classList.add("hidden");
+  updateWorth();
+  inp.focus();
+}
+
+function check(){
+  if (answered) return;
+  const q = pool[i], inp = $("ans");
+  if (!inp.value.trim()){ inp.classList.add("bad"); setTimeout(()=>inp.classList.remove("bad"),350); return; }
+  const r = judge(inp.value, q);
+  if (r === "no"){
+    wrong++;
+    inp.classList.remove("bad"); void inp.offsetWidth; inp.classList.add("bad");
+    setFeedback("bad", "Not quite (−1 point). Try again, or use Hint / Reveal answer.");
+    updateWorth();
+    return;
+  }
+  finish(false, r === "loose" ? answers(q)[0] : null);
+}
+
+function hint(){
+  if (answered) return;
+  const q = pool[i], a = answers(q)[0];
+  const letters = a.replace(/[\s\-]/g,"").length;
+  const maxLevel = Math.max(letters - 1, 1);
+  if (hints >= maxLevel) return;
+  hints++;
+  let shown = 0, out = [];
+  for (const ch of a){
+    if (ch === " ") out.push("  ");
+    else if (ch === "-") out.push("-");
+    else if (shown < hints){ out.push(ch); shown++; }
+    else out.push("_");
+  }
+  $("hint").textContent = out.join(" ");
+  updateWorth();
+  $("ans").focus();
+}
+
+function reveal(){ if (!answered) finish(true, null); }
+
+function finish(revealed, spellingNote){
+  const q = pool[i], inp = $("ans"), a = answers(q)[0];
+  const sec = (Date.now() - qStart) / 1000;
+  answered = true;
+  const perfect = !revealed && hints === 0 && wrong === 0;
+  const bonus = perfect ? bonusFor(sec) : 0;
+  const pts = revealed ? 0 : basePts(hints, wrong) + bonus;
+  total += pts;
+  history.push({q: q, pts: pts, perfect: perfect, sec: sec});
+  $("points").textContent = total;
+  inp.value = a; inp.readOnly = true;
+  inp.className = revealed ? "shown" : "ok";
+  ["checkBtn","hintBtn","revealBtn"].forEach(id => $(id).classList.add("hidden"));
+  $("nextBtn").classList.remove("hidden");
+  $("hint").textContent = "";
+  $("worth").textContent = "";
+  $("barFill").style.width = ((i+1) / pool.length * 100) + "%";
+  const bonusTxt = bonus ? " (incl. +" + bonus + " speed)" : "";
+  if (revealed) setFeedback("info", "Answer: " + a + (answers(q).length > 1 ? " (also: " + answers(q).slice(1).join(", ") + ")" : "") + ". +0 points.");
+  else if (spellingNote) setFeedback("note", "Right word! Correct spelling: " + spellingNote + ". +" + pts + " points" + bonusTxt + ".");
+  else setFeedback("ok", (perfect ? "Richtig! ✓ " : "Correct, with help. ") + "+" + pts + " points" + bonusTxt + ".");
+  if ("speechSynthesis" in window){ $("speakBtn").classList.remove("hidden"); $("speakBtn").dataset.text = q[1].replace("___", a); }
+  $("nextBtn").focus();
+}
+
+function next(){ i++; render(); }
+
+function speak(){
+  try{
+    const u = new SpeechSynthesisUtterance($("speakBtn").dataset.text);
+    u.lang = "de-DE"; u.rate = 0.9;
+    window.speechSynthesis.cancel(); window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+// ---------- result ----------
+function gradeFor(p){
+  if (p >= 230) return "Meister! 🏆";
+  if (p >= 190) return "Sehr gut! 🔥";
+  if (p >= 140) return "Gut 👍";
+  if (p >= 90)  return "Okay, weiter so";
+  return "Weiter üben 💪";
+}
+
+function showResult(){
+  clearInterval(ticker);
+  const secs = (Date.now() - gameStart) / 1000;
+  const perfectCount = history.filter(h => h.perfect).length;
+  const max = pool.length * MAX_PER_Q;
+  $("modeResult").textContent = modeName(mode);
+  $("finalScore").textContent = total + " / " + max;
+  $("grade").textContent = gradeFor(Math.round(total / max * 260));
+  $("fClean").textContent = perfectCount + " / " + pool.length;
+  $("fTime").textContent = fmt(secs);
+  $("fAvg").textContent = (secs / pool.length).toFixed(1) + " s";
+  const prev = getBest(mode);
+  const isRecord = total > prev;
+  if (isRecord) setBest(mode, total);
+  $("record").classList.toggle("hidden", !(isRecord && prev > 0));
+  const missed = history.filter(h => !h.perfect);
+  $("missTitle").textContent = missed.length ? "Review these (" + missed.length + "):" : "Perfect round, no help needed. Gut gemacht!";
+  const ul = $("missList"); ul.textContent = "";
+  missed.forEach(h => {
+    const li = document.createElement("li");
+    li.textContent = h.q[1].replace("___", answers(h.q)[0]);
+    const s = document.createElement("small"); s.textContent = h.q[3] + "  ·  " + h.pts + " pts";
+    li.appendChild(s); ul.appendChild(li);
+  });
+  ul.classList.toggle("hidden", !missed.length);
+  show("result");
+}
+
+function toMenu(){ clearInterval(ticker); buildMenu(); show("menu"); }
+
+$("checkBtn").onclick = check;
+$("hintBtn").onclick = hint;
+$("revealBtn").onclick = reveal;
+$("nextBtn").onclick = next;
+$("speakBtn").onclick = speak;
+$("menuBtn").onclick = toMenu;
+$("toMenuBtn").onclick = toMenu;
+$("againBtn").onclick = () => startGame(mode);
+
+buildUmlauts();
+buildMenu();
+</script>
+</body>
+</html>
